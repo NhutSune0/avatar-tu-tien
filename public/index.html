@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Avatar Tu Tiên</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="login">
+  <div class="login-box">
+    <h1>🌸 AVATAR TU TIÊN 🌸</h1>
+    <p>Thế giới chibi tu tiên — giao lưu, trồng linh thảo, tán gẫu</p>
+    <input id="name-input" maxlength="12" placeholder="Nhập tên của bạn..." autocomplete="off">
+    <button id="join-btn">Vào Chơi</button>
+    <div id="login-err"></div>
+    <p class="tip">Bấm/chạm vào màn hình để di chuyển • Enter để chat</p>
+  </div>
+</div>
+
+<div id="hud">
+  <div id="topleft">
+    <div class="pill" id="gold-pill">💰 <span id="gold-n">0</span></div>
+    <div class="pill" id="lvl-pill">✨ Lv <span id="lvl-n">1</span></div>
+  </div>
+  <div id="topright">
+    <button id="btn-go">🌾 Linh Điền</button>
+    <button id="btn-shop">🏪 Shop</button>
+    <button id="btn-look">👘 Đồ</button>
+  </div>
+  <div id="chatbox">
+    <div id="chatlog"></div>
+    <input id="chatinput" placeholder="Nhắn gì đó..." autocomplete="off" maxlength="80">
+  </div>
+  <div id="plot-pop"></div>
+  <div class="panel" id="panel-shop"><h3>🏪 Tiệm Linh Dược <span class="x" data-close>✕</span></h3><div id="shop-body"></div></div>
+  <div class="panel" id="panel-look"><h3>👘 Thay Đồ <span class="x" data-close>✕</span></h3><div id="look-body"></div></div>
+  <div id="banner"></div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "avatar-tu-tien",
+  "version": "1.0.0",
+  "description": "Game avatar chibi tu tien - giao luu, trong linh thao, cau ca",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "ws": "^8.18.0" }
+}
