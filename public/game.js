@@ -10,7 +10,7 @@ let ws = null, myId = null, myName = '';
 let players = {}, mapId = 'plaza';
 let CROPS = {}, HATS = {}, COLORS = [];
 let PLOT_POS = [], PLAZA = { w: 1600, h: 1200 }, FARM = { w: 1200, h: 900 };
-let farm = { plots: [], seeds: {}, produce: {}, gold: 0, level: 1, xp: 0, xpNeed: 100, look: { color: '#5b8cff', hat: 'none' }, hats: ['none'] };
+let farm = { plots: [], seeds: {}, produce: {}, gold: 0, level: 1, xp: 0, xpNeed: 100, look: { color: '#5b8cff', hat: 'none', gender: 'nam' }, hats: ['none'] };
 let cam = { x: 800, y: 600 };
 let keys = {}, target = null, clouds = [];
 for (let i = 0; i < 7; i++) clouds.push({ x: Math.random() * 2000, y: Math.random() * 350, s: .6 + Math.random() * .8, v: 6 + Math.random() * 10 });
@@ -24,12 +24,17 @@ function banner(msg) {
 }
 
 /* ---------------- Ket noi ---------------- */
+let chosenGender = 'nam';
+document.querySelectorAll('#gender-sel button').forEach(b => b.onclick = () => {
+  chosenGender = b.dataset.g;
+  document.querySelectorAll('#gender-sel button').forEach(x => x.classList.toggle('sel', x === b));
+});
 function joinGame() {
   const name = document.getElementById('name-input').value.trim();
   if (!name) { document.getElementById('login-err').textContent = 'Hãy nhập tên đã!'; return; }
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   ws = new WebSocket(proto + '://' + location.host);
-  ws.onopen = () => ws.send(JSON.stringify({ t: 'join', name }));
+  ws.onopen = () => ws.send(JSON.stringify({ t: 'join', name, gender: chosenGender }));
   ws.onmessage = (ev) => onMsg(JSON.parse(ev.data));
   ws.onclose = () => { document.getElementById('login-err').textContent = 'Mất kết nối, tải lại trang nhé!'; };
 }
@@ -154,7 +159,11 @@ function renderShop() {
 }
 function renderLook() {
   const b = document.getElementById('look-body');
-  let h = '<div style="font-weight:bold;color:#8a5a3a">🎨 Màu áo</div><div class="look-swatches">';
+  let h = '<div style="font-weight:bold;color:#8a5a3a">🧑 Giới tính</div>';
+  const g = farm.look.gender || 'nam';
+  h += `<div class="hat-row"><span>🤴 Nam</span><button data-gender="nam" class="${g === 'nam' ? 'worn' : ''}">${g === 'nam' ? 'Đang chọn' : 'Chọn'}</button></div>`;
+  h += `<div class="hat-row"><span>👸 Nữ</span><button data-gender="nu" class="${g === 'nu' ? 'worn' : ''}">${g === 'nu' ? 'Đang chọn' : 'Chọn'}</button></div>`;
+  h += '<div style="font-weight:bold;color:#8a5a3a;margin-top:10px">🎨 Màu áo</div><div class="look-swatches">';
   for (const c of COLORS) h += `<div class="swatch ${farm.look.color === c ? 'sel' : ''}" data-color="${c}" style="background:${c}"></div>`;
   h += '</div><div style="font-weight:bold;color:#8a5a3a">🎩 Mũ đang có</div>';
   for (const id of farm.hats) {
@@ -162,6 +171,7 @@ function renderLook() {
     h += `<div class="hat-row"><span>${HATS[id].name}</span><button data-wear="${id}" class="${worn ? 'worn' : ''}">${worn ? 'Đang đội' : 'Đội'}</button></div>`;
   }
   b.innerHTML = h;
+  b.querySelectorAll('[data-gender]').forEach(x => x.onclick = () => ws.send(JSON.stringify({ t: 'setLook', gender: x.dataset.gender })));
   b.querySelectorAll('[data-color]').forEach(x => x.onclick = () => ws.send(JSON.stringify({ t: 'setLook', color: x.dataset.color })));
   b.querySelectorAll('[data-wear]').forEach(x => x.onclick = () => ws.send(JSON.stringify({ t: 'setLook', hat: x.dataset.wear })));
 }
@@ -208,23 +218,46 @@ function drawChibi(p, t, isNpc) {
   ctx.beginPath(); ctx.ellipse(x, y + 2, 15, 5, 0, 0, 7); ctx.fill();
   ctx.save(); ctx.translate(x, y + bob);
   const col = (p.look && p.look.color) || '#5b8cff';
+  const gender = (p.look && p.look.gender) || 'nam';
+  const isNu = gender === 'nu';
   const step = p.moving ? Math.sin(t * 10) * 3 : 0;
   ctx.fillStyle = '#6b5138';
   ctx.fillRect(-9, -5 + step * .4, 7, 7); ctx.fillRect(2, -5 - step * .4, 7, 7);
+  // Ao: nu chan vay xoe + vien trang
   ctx.fillStyle = col;
   ctx.beginPath();
-  ctx.moveTo(-11, -28); ctx.lineTo(11, -28); ctx.lineTo(15, -2); ctx.lineTo(-15, -2); ctx.closePath(); ctx.fill();
+  if (isNu) { ctx.moveTo(-10, -28); ctx.lineTo(10, -28); ctx.lineTo(17, -2); ctx.lineTo(-17, -2); }
+  else { ctx.moveTo(-11, -28); ctx.lineTo(11, -28); ctx.lineTo(15, -2); ctx.lineTo(-15, -2); }
+  ctx.closePath(); ctx.fill();
+  if (isNu) { ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(-17, -7, 34, 4); }
   ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(-11, -28, 5, 26);
   ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(-11, -15, 22, 4);
+  // Dau
   ctx.fillStyle = '#ffd9b3';
   ctx.beginPath(); ctx.arc(0, -40, 14, 0, 7); ctx.fill();
-  ctx.fillStyle = '#3a2a1a';
+  // Toc: nam ngan, nu dai 2 ben + bui toc
+  ctx.fillStyle = isNu ? '#5a3a28' : '#3a2a1a';
   ctx.beginPath(); ctx.arc(0, -42, 14, Math.PI * 1.03, Math.PI * 1.97); ctx.fill();
-  ctx.beginPath(); ctx.arc(-14, -40, 4, 0, 7); ctx.arc(14, -40, 4, 0, 7); ctx.fill();
+  if (isNu) {
+    ctx.beginPath(); ctx.ellipse(-13, -28, 5, 11, .25, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(13, -28, 5, 11, -.25, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -56, 6.5, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ff8fb3';
+    ctx.beginPath(); ctx.arc(7, -58, 2.8, 0, 7); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(7, -58, 1.2, 0, 7); ctx.fill();
+  } else {
+    ctx.beginPath(); ctx.arc(-14, -40, 4, 0, 7); ctx.arc(14, -40, 4, 0, 7); ctx.fill();
+  }
   const ex = Math.cos(p.dir || 0) * 2.5;
   ctx.fillStyle = '#2a2a2a';
   ctx.beginPath(); ctx.arc(-5 + ex, -39, 2.2, 0, 7); ctx.fill();
   ctx.beginPath(); ctx.arc(5 + ex, -39, 2.2, 0, 7); ctx.fill();
+  if (isNu) {
+    ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(-8 + ex, -41); ctx.lineTo(-10.5 + ex, -43.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(8 + ex, -41); ctx.lineTo(10.5 + ex, -43.5); ctx.stroke();
+  }
   ctx.fillStyle = 'rgba(255,140,140,.55)';
   ctx.beginPath(); ctx.arc(-9 + ex, -34, 2.6, 0, 7); ctx.fill();
   ctx.beginPath(); ctx.arc(9 + ex, -34, 2.6, 0, 7); ctx.fill();
@@ -370,7 +403,7 @@ function drawBackground(t) {
     ctx.beginPath(); ctx.ellipse(1150, 950, 130, 80, 0, 0, 7); ctx.fill();
     ctx.strokeStyle = '#a8d8b8'; ctx.lineWidth = 8; ctx.stroke();
     drawPortal(1300, 300, '🌾 Linh Điền', t);
-    drawChibi({ x: 400, y: 420, dir: 0, moving: false, look: { color: '#e8a05c', hat: 'none' }, name: 'Chủ Tiệm', chat: '' }, t, true);
+    drawChibi({ x: 400, y: 420, dir: 0, moving: false, look: { color: '#e8a05c', hat: 'none', gender: 'nu' }, name: 'Chủ Tiệm', chat: '' }, t, true);
   } else {
     ctx.fillStyle = '#9ed07e';
     roundRect(180, 220, 840, 560, 30); ctx.fill();

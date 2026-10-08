@@ -66,10 +66,11 @@ const players = new Map();
 const farmOf = (name) => 'farm_' + name;
 
 function newPlots() { return PLOT_POS.map(() => ({ crop: null })); }
-function createPlayer(id, name) {
+function createPlayer(id, name, gender) {
+  const g = (gender === 'nu') ? 'nu' : 'nam';
   const p = { id, name, mapId: 'plaza', x: 800, y: 650, dir: 0, moving: false,
     level: 1, xp: 0, gold: 100, seeds: { linhthao: 3 }, produce: {},
-    plots: newPlots(), look: { color: COLORS[0], hat: 'none' }, hats: ['none'],
+    plots: newPlots(), look: { color: COLORS[0], hat: 'none', gender: g }, hats: ['none'],
     lastX: 800, lastY: 650, lastMoveT: Date.now(), lastChat: 0, chatMsg: '', chatT: 0, ws: null };
   const s = db[name];
   if (s) {
@@ -77,6 +78,7 @@ function createPlayer(id, name) {
     p.seeds = s.seeds || {}; p.produce = s.produce || {};
     p.plots = (s.plots && s.plots.length === 6) ? s.plots : newPlots();
     p.look = s.look || p.look; p.hats = s.hats || ['none'];
+    if (!p.look.gender) p.look.gender = 'nam';
     p.x = clamp(s.x || 800, 0, PLAZA.w); p.y = clamp(s.y || 650, 0, PLAZA.h);
     p.lastX = p.x; p.lastY = p.y;
   }
@@ -126,7 +128,7 @@ wss.on('connection', (ws) => {
       const name = cleanName(m.name);
       if (nameTaken(name)) { ws.send(JSON.stringify({ t: 'nameTaken' })); ws.close(); return; }
       const isNew = !db[name];
-      player = createPlayer(id, name);
+      player = createPlayer(id, name, m.gender);
       player.ws = ws;
       players.set(id, player);
       sendTo(id, { t: 'welcome', id, crops: CROPS, hats: HATS, colors: COLORS, isNew,
@@ -224,6 +226,7 @@ wss.on('connection', (ws) => {
     else if (m.t === 'setLook') {
       if (m.color && COLORS.includes(m.color)) player.look.color = m.color;
       if (m.hat && player.hats.includes(m.hat)) player.look.hat = m.hat;
+      if (m.gender === 'nam' || m.gender === 'nu') player.look.gender = m.gender;
       sendFarm(player);
     }
   });
